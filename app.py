@@ -97,7 +97,7 @@ if st.button("🚀 Rulează Analiza"):
                 st.write("• **Risk/Reward:** Optimizat pentru orizontul selectat")
 
             # 4. Monitor Știri
-            st.markdown("---")
+st.markdown("---")
             st.subheader("📰 Monitorul de Știri Inteligent & Impact")
             
             pozitiv = ['bullish', 'breakout', 'surge', 'soars', 'buy', 'growth', 'beat', 'upgraded', 'rally', 'profit', 'ai', 'demand']
