@@ -31,18 +31,27 @@ if st.button("🚀 Rulează Analiza"):
         else:
             ultimul_pret = istoric['Close'].iloc[-1]
             
-            # 1. LOGICA ALERTĂ (doar afișare, nu blochează restul)
-            if pret_alerta > 0:
-                if ultimul_pret >= pret_alerta:
-                    st.success(f"🔔 ALERTĂ ACTIVATĂ: Prețul actual ({ultimul_pret:.2f} $) a atins/depășit pragul de {pret_alerta:.2f} $!")
-                else:
-                    st.info(f"ℹ️ Prețul curent ({ultimul_pret:.2f} $) este sub pragul de alertă ({pret_alerta:.2f} $).")
-
-            # 2. CALCUL INDICATORI (Aici era problema probabil)
+            # Calcul indicatori necesari pentru MAMI și RSI
             istoric['EMA_20'] = istoric['Close'].ewm(span=20, adjust=False).mean()
             istoric['EMA_50'] = istoric['Close'].ewm(span=50, adjust=False).mean()
             
-            # 3. AFIȘARE GRAFIC (Acesta trebuie să fie mereu vizibil)
+            schimbare = istoric['Close'].diff()
+            cresteri = schimbare.clip(lower=0)
+            scaderi = -1 * schimbare.clip(upper=0)
+            ema_cresteri = cresteri.ewm(span=14, adjust=False).mean()
+            ema_scaderi = scaderi.ewm(span=14, adjust=False).mean()
+            rs = ema_cresteri / (ema_scaderi + 1e-10)
+            rsi = 100 - (100 / (1 + rs))
+            rsi_acum = rsi.iloc[-1]
+
+            # 1. Logica Alertă
+            if pret_alerta > 0:
+                if ultimul_pret >= pret_alerta:
+                    st.success(f"🔔 ALERTĂ ACTIVATĂ: Prețul actual ({ultimul_pret:.2f} $) a atins pragul de {pret_alerta:.2f} $!")
+                else:
+                    st.info(f"ℹ️ Prețul curent ({ultimul_pret:.2f} $) este sub pragul de alertă.")
+
+            # 2. Grafic
             st.subheader("📈 Grafic Avansat")
             fig = go.Figure()
             fig.add_trace(go.Candlestick(x=istoric.index, open=istoric['Open'], high=istoric['High'], low=istoric['Low'], close=istoric['Close'], name="Preț"))
@@ -50,18 +59,13 @@ if st.button("🚀 Rulează Analiza"):
             fig.add_trace(go.Scatter(x=istoric.index, y=istoric['EMA_50'], name='EMA 50', line=dict(color='blue')))
             fig.update_layout(template="plotly_dark", xaxis_rangeslider_visible=False)
             st.plotly_chart(fig, use_container_width=True)
-            # --- INTEGRARE MAMI EDGE RATING ---
-# --- MAMI EDGE RATING ---
+
+            # 3. MAMI EDGE RATING
             st.markdown("---")
             st.subheader("🛡️ MAMI EDGE: Evaluare Multi-Factorială")
-            
-            # ATENȚIE: Aceste linii trebuie să fie aliniate perfect la stânga (fără spații în față)
-            # dacă sunt în interiorul blocului "if st.button", ele trebuie să aibă exact 12 spații (sau 3 tab-uri)
             score = 0
-            if ultimul_pret > istoric['EMA_50'].iloc[-1]: 
-                score += 20 
-            if 30 < rsi_acum < 70: 
-                score += 20
+            if ultimul_pret > istoric['EMA_50'].iloc[-1]: score += 20 
+            if 30 < rsi_acum < 70: score += 20
             score += 20 # Volum simulat
             score += 15 # RS simulat
             score += 10 # Sector
@@ -79,52 +83,21 @@ if st.button("🚀 Rulează Analiza"):
                 st.write("• **Relative Strength:** Analizat vs S&P500")
                 st.write("• **Entry Quality:** Evaluat pe baza mediei mobile")
                 st.write("• **Risk/Reward:** Optimizat pentru orizontul selectat")
-            st.markdown("---")
-# --- MAMI EDGE RATING ---
-            st.markdown("---")
-            st.subheader("🛡️ MAMI EDGE: Evaluare Multi-Factorială")
-            score = 0
-            if ultimul_pret > istoric['EMA_50'].iloc[-1]: 
-                score += 20 
-            if 30 < rsi_acum < 70: 
-                score += 20
-            score += 20 # Volum simulat
-            score += 15 # RS simulat
-            score += 10 # Sector
-            score += 15 # R/R
-            
-            scor_mami = min(score, 100)
-            stele = "★" * int(scor_mami / 20) + "☆" * (5 - int(scor_mami / 20))
 
-            col_m1, col_m2 = st.columns([1, 2])
-            col_m1.metric("Scor Final", f"{scor_mami}/100")
-            col_m2.write(f"### Rating: {stele}")
-
-            with st.expander("Vezi detaliile analizei MAMI EDGE"):
-                st.write(f"• **Trend Momentum:** {'Bullish' if ultimul_pret > istoric['EMA_50'].iloc[-1] else 'Bearish'}")
-                st.write("• **Relative Strength:** Analizat vs S&P500")
-                st.write("• **Entry Quality:** Evaluat pe baza mediei mobile")
-                st.write("• **Risk/Reward:** Optimizat pentru orizontul selectat")
+            # 4. Monitor Știri
             st.markdown("---")
-            # 4. AFIȘARE ȘTIRI (dacă vrei să le cureți, poți itera așa)
-st.markdown("---")
-st.subheader("📰 Monitorul de Știri Inteligent & Impact")
-pozitiv = ['bullish', 'breakout', 'surge', 'soars', 'buy', 'growth', 'beat', 'upgraded', 'rally', 'profit', 'ai', 'demand']
-negativ = ['bankruptcy', 'crash', 'investigation', 'fraud', 'bearish', 'slump', 'miss', 'drop', 'fall', 'sell', 'loss', 'down', 'cut']
-url = f"https://news.google.com/rss/search?q={ticker_ales}+stock&hl=en-US&gl=US&ceid=US:en"
-try:
-    raspuns = requests.get(url, timeout=5)
-    soup = BeautifulSoup(raspuns.content, 'html.parser')
-    articole = soup.find_all('item')[:10]
-    for art in articole:
-        titlu = art.title.text
-        titlu_lower = titlu.lower()
-        if any(word in titlu_lower for word in pozitiv):
-            emoji = "🟢"
-        elif any(word in titlu_lower for word in negativ):
-            emoji = "🔴"
-        else:
-            emoji = "⚪"
-        st.markdown(f"{emoji} {titlu}")
-except:
-    st.info("Monitorul de știri este momentan indisponibil.")
+            st.subheader("📰 Monitorul de Știri Inteligent & Impact")
+            pozitiv = ['bullish', 'breakout', 'surge', 'soars', 'buy', 'growth', 'beat', 'upgraded', 'rally', 'profit', 'ai', 'demand']
+            negativ = ['bankruptcy', 'crash', 'investigation', 'fraud', 'bearish', 'slump', 'miss', 'drop', 'fall', 'sell', 'loss', 'down', 'cut']
+            url = f"https://news.google.com/rss/search?q={ticker_ales}+stock&hl=en-US&gl=US&ceid=US:en"
+            try:
+                raspuns = requests.get(url, timeout=5)
+                soup = BeautifulSoup(raspuns.content, 'html.parser')
+                articole = soup.find_all('item')[:10]
+                for art in articole:
+                    titlu = art.title.text
+                    titlu_lower = titlu.lower()
+                    emoji = "🟢" if any(w in titlu_lower for w in pozitiv) else ("🔴" if any(w in titlu_lower for w in negativ) else "⚪")
+                    st.markdown(f"{emoji} {titlu}")
+            except:
+                st.info("Monitorul de știri este momentan indisponibil.")
