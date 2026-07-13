@@ -108,8 +108,11 @@ if st.button("🚀 Rulează Analiza"):
                 articole = soup.find_all('item')[:10]
                 for art in articole:
                     titlu = art.title.text
+                    link = art.link.text # Extragem link-ul furnizat de RSS
                     titlu_lower = titlu.lower()
+                    
+                    # Logica pentru buline
                     emoji = "🟢" if any(w in titlu_lower for w in pozitiv) else ("🔴" if any(w in titlu_lower for w in negativ) else "⚪")
-                    st.markdown(f"{emoji} {titlu}")
-            except:
-                st.info("Monitorul de știri este momentan indisponibil.")
+                    
+                    # Afișare știre ca link clicabil (markdown)
+                    st.markdown(f"{emoji} [{titlu}]({link})")
