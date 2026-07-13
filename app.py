@@ -1,4 +1,3 @@
-
 import streamlit as st
 import yfinance as yf
 import numpy as np
@@ -6,6 +5,7 @@ import pandas as pd
 from scipy.stats import norm
 import requests
 from bs4 import BeautifulSoup
+import plotly.graph_objects as go
 
 st.set_page_config(page_title="Quant Analyzer Pro", page_icon="🧠", layout="centered")
 
@@ -101,6 +101,33 @@ if st.button("🚀 Rulează Analiza Robotului"):
             st.progress(int(scor_stiri), text=f"📰 Motor Sentiment Știri: {scor_stiri:.1f}%")
             
             st.markdown("---")
-            st.subheader("📈 Grafic Istoric și Medii Mobile (EMA)")
-            grafic_data = istoric[['Close', 'EMA_20', 'EMA_50']].tail(60)
-            st.line_chart(grafic_data)
+            st.subheader("📊 Grafic Avansat Candlestick (Ultimele 90 de zile)")
+            
+            # Filtram ultimele 90 de zile pentru un grafic aerisit
+            date_grafic = istoric.tail(90)
+            
+            fig = go.Figure()
+            
+            # Adaugam lumandarile (Open, High, Low, Close)
+            fig.add_trace(go.Candlestick(
+                x=date_grafic.index,
+                open=date_grafic['Open'],
+                high=date_grafic['High'],
+                low=date_grafic['Low'],
+                close=date_grafic['Close'],
+                name='Preț Acțiune'
+            ))
+            
+            # Adaugam liniile EMA pentru strategii tehnice
+            fig.add_trace(go.Scatter(x=date_grafic.index, y=date_grafic['EMA_20'], mode='lines', name='EMA 20 (Scurt)', line=dict(color='orange', width=1.5)))
+            fig.add_trace(go.Scatter(x=date_grafic.index, y=date_grafic['EMA_50'], mode='lines', name='EMA 50 (Lung)', line=dict(color='blue', width=1.5)))
+            
+            # Design grafic curat
+            fig.update_layout(
+                margin=dict(l=10, r=10, t=10, b=10),
+                xaxis_rangeslider_visible=False,
+                template="plotly_white",
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+            )
+            
+            st.plotly_chart(fig, use_container_width=True)
