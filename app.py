@@ -4,11 +4,9 @@ import requests
 from bs4 import BeautifulSoup
 import plotly.graph_objects as go
 
-# Configurare interfață
-st.set_page_config(page_title="Quant Analyzer Pro", page_icon="🧠", layout="centered")
+st.set_page_config(page_title="Quant Analyzer Pro", page_icon="🧠")
 st.title("🧠 Quant Analyzer Pro")
 
-# Input-uri (rămân în afara butonului pentru a fi vizibile mereu)
 ticker_ales = st.text_input("Ticker acțiune:", "NVDA").upper()
 col1, col2 = st.columns(2)
 with col1:
@@ -17,43 +15,60 @@ with col2:
     pret_alerta = st.number_input("Preț Alertă ($):", value=0.0)
 
 if st.button("🚀 Rulează Analiza"):
-    # Mapare perioade
     perioada_map = {"1 An": "1y", "6 Luni": "6mo", "3 Luni": "3mo"}
+    date = yf.Ticker(ticker_ales)
+    istoric = date.history(period=perioada_map[perioada])
     
-    with st.spinner('Se calculează datele...'):
-        date = yf.Ticker(ticker_ales)
-        istoric = date.history(period=perioada_map[perioada])
+    if not istoric.empty:
+        # Calcul Indicatori
+        istoric['EMA_8'] = istoric['Close'].ewm(span=8, adjust=False).mean()
+        istoric['EMA_20'] = istoric['Close'].ewm(span=20, adjust=False).mean()
+        istoric['EMA_50'] = istoric['Close'].ewm(span=50, adjust=False).mean()
         
-        if not istoric.empty:
-            # 1. Calculează indicatorii (trebuie făcute ÎNAINTE de grafic)
-            istoric['EMA_8'] = istoric['Close'].ewm(span=8, adjust=False).mean()
-            istoric['EMA_20'] = istoric['Close'].ewm(span=20, adjust=False).mean()
-            istoric['EMA_50'] = istoric['Close'].ewm(span=50, adjust=False).mean()
-            ultimul_pret = istoric['Close'].iloc[-1]
-            
-            # 2. Alertă
-            if pret_alerta > 0 and ultimul_pret >= pret_alerta:
-                st.success(f"🔔 ALERTĂ: Prețul a atins pragul de {pret_alerta} $!")
-            
-            # 3. Grafic Avansat (TOATE liniile de aici sunt în interiorul butonului)
-            st.subheader("📈 Grafic Avansat")
-            fig = go.Figure()
-            fig.add_trace(go.Candlestick(x=istoric.index, open=istoric['Open'], high=istoric['High'], low=istoric['Low'], close=istoric['Close'], name="Preț"))
-            fig.add_trace(go.Scatter(x=istoric.index, y=istoric['EMA_8'], name='EMA 8', line=dict(color='yellow', width=1)))
-            fig.add_trace(go.Scatter(x=istoric.index, y=istoric['EMA_20'], name='EMA 20', line=dict(color='orange', width=1)))
-            fig.add_trace(go.Scatter(x=istoric.index, y=istoric['EMA_50'], name='EMA 50', line=dict(color='blue', width=1)))
-            
-            # Eliminăm rangeslider-ul care crea graficul dublu
-            fig.update_layout(xaxis_rangeslider_visible=False, template="plotly_white")
-            st.plotly_chart(fig, use_container_width=True)
-            
-            # 4. Restul indicatorilor (Verdict, Mami Edge, Știri)
-            st.success("### Verdict Algoritm: BUY")
-            st.write("### Rating Final: 80/100 ★★★★☆")
-            
-            st.markdown("---")
-            st.subheader("📰 Monitorul de Știri")
-            # ... aici poți pune logica ta de știri ...
-            
-        else:
-            st.error("Nu s-au găsit date pentru acest ticker.")
+        delta = istoric['Close'].diff()
+        gain = (delta.where(delta > 0, 0)).ewm(span=14).mean()
+        loss = (-delta.where(delta < 0, 0)).ewm(span=14).mean()
+        rsi = 100 - (100 / (1 + (gain / loss)))
+        rsi_acum = rsi.iloc[-1]
+        ultimul_pret = istoric['Close'].iloc[-1]
+
+        # Logica Verdict (Nu mai dă Buy la orice)
+        score = 0
+        if ultimul_pret > istoric['EMA_50'].iloc[-1]: score += 40
+        if rsi_acum < 70: score += 30
+        if ultimul_pret > istoric['EMA_8'].iloc[-1]: score += 30
+        
+        verdict = "BUY" if score > 60 else ("HOLD" if score > 30 else "SELL")
+        culoare = "green" if verdict == "BUY" else ("orange" if verdict == "HOLD" else "red")
+
+        # Afișare Alertă
+        if pret_alerta > 0 and ultimul_pret >= pret_alerta:
+            st.success(f"🔔 ALERTĂ: Preț atins ({ultimul_pret:.2f} $)")
+
+        # Grafic
+        fig = go.Figure()
+        fig.add_trace(go.Candlestick(x=istoric.index, open=istoric['Open'], high=istoric['High'], low=istoric['Low'], close=istoric['Close'], name="Preț"))
+        fig.add_trace(go.Scatter(x=istoric.index, y=istoric['EMA_8'], name='EMA 8', line=dict(color='yellow', width=1)))
+        fig.add_trace(go.Scatter(x=istoric.index, y=istoric['EMA_20'], name='EMA 20', line=dict(color='orange', width=1)))
+        fig.add_trace(go.Scatter(x=istoric.index, y=istoric['EMA_50'], name='EMA 50', line=dict(color='blue', width=1)))
+        fig.update_layout(xaxis_rangeslider_visible=False)
+        st.plotly_chart(fig, use_container_width=True)
+
+        # Verdict și MAMI EDGE
+        st.markdown(f"<h2 style='color:{culoare};'>Verdict Algoritm: {verdict} ({score}/100)</h2>", unsafe_allow_html=True)
+        st.subheader("🛡️ MAMI EDGE: Evaluare Multi-Factorială")
+        stele = "★" * int(score/20) + "☆" * (5 - int(score/20))
+        st.write(f"Rating: {stele}")
+
+        # Știri
+        st.subheader("📰 Monitorul de Știri")
+        try:
+            url = f"https://news.google.com/rss/search?q={ticker_ales}+stock"
+            soup = BeautifulSoup(requests.get(url, timeout=5).content, 'html.parser')
+            for art in soup.find_all('item')[:5]:
+                emoji = "🟢" if any(w in art.title.text.lower() for w in ['bullish','growth','beat']) else "🔴"
+                st.markdown(f"{emoji} [{art.title.text}]({art.link.text})")
+        except:
+            st.info("Știri indisponibile.")
+    else:
+        st.error("Ticker invalid.")
