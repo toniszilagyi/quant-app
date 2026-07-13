@@ -7,20 +7,58 @@ import requests
 from bs4 import BeautifulSoup
 import plotly.graph_objects as go
 
+# Configurare pagină modernă
 st.set_page_config(page_title="Quant Analyzer Pro", page_icon="🧠", layout="centered")
 
-st.title("🧠 Quant Analyzer Pro")
-st.markdown("Introdu tickerul unei acțiuni pentru a genera un verdict bazat pe Probabilități, Analiză Tehnică și Știri.")
+# Injectare stil custom (CSS) pentru un look profesional și curat
+st.markdown("""
+    <style>
+    .main { background-color: #0e1117; }
+    h1, h2, h3 { color: #ffffff !important; }
+    .stButton>button {
+        background-color: #ff4b4b;
+        color: white;
+        border-radius: 8px;
+        width: 100%;
+        font-weight: bold;
+        border: none;
+        padding: 10px;
+    }
+    .stButton>button:hover { background-color: #ff3333; color: white; }
+    .metric-box {
+        background-color: #1e222b;
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+        border: 1px solid #2e333d;
+    }
+    .stProgress > div > div > div > div { background-color: #00ffcc; }
+    </style>
+""", unsafe_allow_html=True)
 
-ticker_ales = st.text_input("Introduceți Ticker-ul (ex: NVDA, TSLA, AAPL, AMD):", "NVDA").upper()
+st.title("🧠 Quant Analyzer Pro")
+st.markdown("Generați verdicte financiare bazate pe Probabilități, Analiză Tehnică Avanasată și Sentimentul Știrilor din Piață.")
+
+# Secțiunea de introducere date utilizator grupate elegant
+col_input1, col_input2 = st.columns([2, 1])
+
+with col_input1:
+    ticker_ales = st.text_input("Introduceți Ticker-ul acțiunii (ex: NVDA, AAPL, TSLA):", "NVDA").upper()
+
+with col_input2:
+    perioada = st.selectbox("Orizont Timp:", ["1 An", "6 Luni", "3 Luni"], index=0)
+
+# Mapare opțiune selectată în format yfinance
+perioada_map = {"1 An": "1y", "6 Luni": "6mo", "3 Luni": "3mo"}
+interval_ales = perioada_map[perioada]
 
 if st.button("🚀 Rulează Analiza Robotului"):
-    with st.spinner('Se descarcă datele și se analizează piața...'):
+    with st.spinner('Se descarcă datele istorice și se calculează indicatorii...'):
         date_actiune = yf.Ticker(ticker_ales)
-        istoric = date_actiune.history(period="1y")
+        istoric = date_actiune.history(period=interval_ales)
         
         if istoric.empty:
-            st.error(f"❌ Ticker-ul [{ticker_ales}] nu a putut fi găsit.")
+            st.error(f"❌ Ticker-ul [{ticker_ales}] nu a putut fi găsit în baza de date Yahoo Finance.")
         else:
             ultimul_pret = istoric['Close'].iloc[-1]
             istoric['Randament_Zilnic'] = istoric['Close'].pct_change()
@@ -28,7 +66,7 @@ if st.button("🚀 Rulează Analiza Robotului"):
             media_recenta = istoric['Randament_Zilnic'].tail(20).mean()
             scor_prob = norm.cdf(media_recenta / volatilitate_zilnica) * 100
             
-            # Indicatori tehnici
+            # Indicatori tehnici (EMA & RSI)
             istoric['EMA_20'] = istoric['Close'].ewm(span=20, adjust=False).mean()
             istoric['EMA_50'] = istoric['Close'].ewm(span=50, adjust=False).mean()
             
@@ -50,7 +88,7 @@ if st.button("🚀 Rulează Analiza Robotului"):
             if rsi_acum < 70 and rsi_acum > 30: puncte_tehnice += 1
             scor_tehnic = (puncte_tehnice / 3) * 100
             
-            # --- MOTOR DE ȘTIRI AVANSAT CURĂȚAT ---
+            # --- MOTOR DE ȘTIRI LIVE ---
             url = f"https://news.google.com/rss/search?q={ticker_ales}+stock&hl=en-US&gl=US&ceid=US:en"
             raspuns = requests.get(url)
             scor_stiri = 50.0
@@ -60,7 +98,6 @@ if st.button("🚀 Rulează Analiza Robotului"):
                 soup = BeautifulSoup(raspuns.content, 'html.parser')
                 articole = soup.find_all('item')[:10]
                 
-                # Variabile redenumite standard
                 dictionar_pozitiv = {
                     'bullish': 3, 'breakout': 3, 'surge': 3, 'soars': 3, 'shatters': 3,
                     'buy': 2, 'growth': 2, 'beat': 2, 'earnings': 1, 'upgraded': 2, 
@@ -102,66 +139,65 @@ if st.button("🚀 Rulează Analiza Robotului"):
                 else:
                     scor_stiri = 50.0
 
+            # Calcul Scor Global Combinat
             scor_global = (scor_prob * 0.30) + (scor_tehnic * 0.40) + (scor_stiri * 0.30)
             
-            if scor_global >= 75: recomandare, subtext, culoare_box = "🚀 STRONG BUY", "Aliniere perfectă între indicatori!", "#d4edda"
-            elif scor_global >= 55: recomandare, subtext, culoare_box = "📈 BUY", "Context general pozitiv. Atenție la risc.", "#d4edda"
-            elif scor_global >= 45: recomandare, subtext, culoare_box = "🟡 HOLD", "Indicatori contradictorii. Așteaptă confirmări.", "#fff3cd"
-            elif scor_global >= 30: recomandare, subtext, culoare_box = "📉 SELL", "Presiune mare la vânzare.", "#f8d7da"
-            else: recomandare, subtext, culoare_box = "💥 STRONG SELL", "Semnale negative masive. Evită.", "#f8d7da"
+            if scor_global >= 75: recomandare, subtext, culoare_box = "🚀 STRONG BUY", "Aliniere excelentă între toți indicatorii cantitativi.", "#d4edda"
+            elif scor_global >= 55: recomandare, subtext, culoare_box = "📈 BUY", "Context general constructiv. Management optim de risc indicat.", "#d4edda"
+            elif scor_global >= 45: recomandare, subtext, culoare_box = "🟡 HOLD", "Semnale neutre sau contradictorii în piață.", "#fff3cd"
+            elif scor_global >= 30: recomandare, subtext, culoare_box = "📉 SELL", "Presiune de distribuție detectată pe termen scurt.", "#f8d7da"
+            else: recomandare, subtext, culoare_box = "💥 STRONG SELL", "Semnale tehnice și fundamentale negative structurale.", "#f8d7da"
             
             st.markdown(f'''
-            <div style="background-color: {culoare_box}; padding: 20px; border-radius: 10px; border: 1px solid #ccc; text-align: center; margin-bottom: 25px;">
-                <h2 style="margin: 0; color: black;">Verdict Final: {recomandare}</h2>
-                <p style="margin: 5px 0 0 0; font-size: 16px; color: #333;">{subtext}</p>
-                <h1 style="margin: 10px 0 0 0; font-size: 48px; color: black;">{scor_global:.1f}%</h1>
+            <div style="background-color: {culoare_box}; padding: 22px; border-radius: 12px; border: 1px solid #bbb; text-align: center; margin-bottom: 25px; margin-top: 15px;">
+                <h2 style="margin: 0; color: #111111 !important; font-weight: bold;">Verdict Algoritm: {recomandare}</h2>
+                <p style="margin: 5px 0 0 0; font-size: 15px; color: #222222;">{subtext}</p>
+                <h1 style="margin: 8px 0 0 0; font-size: 52px; color: #111111 !important; font-weight: 800;">{scor_global:.1f}%</h1>
             </div>
             ''', unsafe_allow_html=True)
             
             col1, col2, col3 = st.columns(3)
-            col1.metric("💰 Preț Actual", f"{ultimul_pret:.2f} $")
-            col2.metric("⏱️ Indicator RSI", f"{rsi_acum:.1f}")
-            col3.metric("📊 Volatilitate", f"{volatilitate_zilnica*100:.2f} %")
+            col1.metric("💰 Preț Închidere", f"{ultimul_pret:.2f} $")
+            col2.metric("⏱️ Indicator RSI (14)", f"{rsi_acum:.1f}")
+            col3.metric("📊 Volatilitate Istorică", f"{volatilitate_zilnica*100:.2f} %")
             
             st.markdown("---")
-            st.subheader("Defalcarea scorurilor pe Motoare:")
-            st.progress(int(scor_prob), text=f"🔢 Motor Probabilități: {scor_prob:.1f}%")
-            st.progress(int(scor_tehnic), text=f"📈 Motor Analiză Tehnică: {scor_tehnic:.1f}%")
-            st.progress(int(scor_stiri), text=f"📰 Motor Sentiment Știri (Ponderat): {scor_stiri:.1f}%")
+            st.subheader("📊 Contribuție și Ponderare Motoare:")
+            st.progress(int(scor_prob), text=f"🔢 Analiză Statistică / Probabilități: {scor_prob:.1f}%")
+            st.progress(int(scor_tehnic), text=f" Trend Tehnic (Preț vs EMA): {scor_tehnic:.1f}%")
+            st.progress(int(scor_stiri), text=f"📰 Sentiment Știri Media (Ponderat): {scor_stiri:.1f}%")
             
             st.markdown("---")
-            st.subheader("📊 Grafic Avansat Candlestick (Fără întreruperi de weekend)")
+            st.subheader(f"📈 Grafic Interactiv Candlestick (Orizont: {perioada})")
             
-            date_grafic = istoric.tail(90).copy()
+            # Dinamic, luăm tot setul descărcat din perioadă pentru o rezoluție perfectă
+            date_grafic = istoric.copy()
             date_grafic['Data_Str'] = date_grafic.index.strftime('%Y-%m-%d')
             
             fig = go.Figure()
-            
             fig.add_trace(go.Candlestick(
                 x=date_grafic['Data_Str'],
-                open=date_grafic['Open'],
-                high=date_grafic['High'],
-                low=date_grafic['Low'],
-                close=date_grafic['Close'],
+                open=date_grafic['Open'], high=date_grafic['High'],
+                low=date_grafic['Low'], close=date_grafic['Close'],
                 name='Preț Acțiune'
             ))
             
-            fig.add_trace(go.Scatter(x=date_grafic['Data_Str'], y=date_grafic['EMA_20'], mode='lines', name='EMA 20', line=dict(color='orange', width=1.5)))
-            fig.add_trace(go.Scatter(x=date_grafic['Data_Str'], y=date_grafic['EMA_50'], mode='lines', name='EMA 50', line=dict(color='blue', width=1.5)))
+            fig.add_trace(go.Scatter(x=date_grafic['Data_Str'], y=date_grafic['EMA_20'], mode='lines', name='EMA 20', line=dict(color='#ff9900', width=1.5)))
+            fig.add_trace(go.Scatter(x=date_grafic['Data_Str'], y=date_grafic['EMA_50'], mode='lines', name='EMA 50', line=dict(color='#0066ff', width=1.5)))
             
             fig.update_layout(
                 margin=dict(l=10, r=10, t=10, b=10),
                 xaxis_rangeslider_visible=False,
-                template="plotly_white",
-                xaxis=dict(type='category', nticks=10),
+                template="plotly_dark",  # Mod întunecat profesional pentru grafic
+                xaxis=dict(type='category', nticks=12),
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
             )
             st.plotly_chart(fig, use_container_width=True)
 
             st.markdown("---")
-            st.subheader("📰 Monitorul de Știri Inteligent & Impact")
+            st.subheader("📰 Monitorul de Știri Inteligent & Analiză Impact")
             if stiri_gasite:
                 for stire in stiri_gasite:
                     st.markdown(stire)
             else:
-                st.info("Nu au fost găsite știri recente care să poată fi evaluate complet.")
+                st.info("Nu s-au putut identifica știri recente cu impact cuantificabil pe acest ticker.")
