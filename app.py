@@ -99,20 +99,32 @@ if st.button("🚀 Rulează Analiza"):
             # 4. Monitor Știri
             st.markdown("---")
             st.subheader("📰 Monitorul de Știri Inteligent & Impact")
+            
             pozitiv = ['bullish', 'breakout', 'surge', 'soars', 'buy', 'growth', 'beat', 'upgraded', 'rally', 'profit', 'ai', 'demand']
             negativ = ['bankruptcy', 'crash', 'investigation', 'fraud', 'bearish', 'slump', 'miss', 'drop', 'fall', 'sell', 'loss', 'down', 'cut']
+            
             url = f"https://news.google.com/rss/search?q={ticker_ales}+stock&hl=en-US&gl=US&ceid=US:en"
+            
             try:
                 raspuns = requests.get(url, timeout=5)
                 soup = BeautifulSoup(raspuns.content, 'html.parser')
                 articole = soup.find_all('item')[:10]
+                
                 for art in articole:
                     titlu = art.title.text
-                    link = art.link.text # Extragem link-ul furnizat de RSS
+                    link = art.link.text
                     titlu_lower = titlu.lower()
                     
-                    # Logica pentru buline
-                    emoji = "🟢" if any(w in titlu_lower for w in pozitiv) else ("🔴" if any(w in titlu_lower for w in negativ) else "⚪")
+                    if any(word in titlu_lower for word in pozitiv):
+                        emoji = "🟢"
+                    elif any(word in titlu_lower for word in negativ):
+                        emoji = "🔴"
+                    else:
+                        emoji = "⚪"
                     
+                    st.markdown(f"{emoji} [{titlu}]({link})")
+                    
+            except:
+                st.info("Monitorul de știri este momentan indisponibil.")
                     # Afișare știre ca link clicabil (markdown)
                     st.markdown(f"{emoji} [{titlu}]({link})")
