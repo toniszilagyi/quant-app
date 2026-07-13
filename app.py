@@ -29,14 +29,30 @@ if st.button("🚀 Rulează Analiza"):
         else:
             st.info(f"ℹ️ Prețul curent ({ultimul_pret:.2f} $) este sub prag.")
 
-        # 2. Grafic
-        fig = go.Figure()
-        fig.add_trace(go.Candlestick(x=istoric.index, open=istoric['Open'], high=istoric['High'], low=istoric['Low'], close=istoric['Close'], name="Preț"))
-        st.plotly_chart(fig, use_container_width=True)
+        # 2. Grafic Avansat
+        st.subheader("📈 Grafic Avansat")
         
-        # 3. Verdict (Exemplu simplificat)
-        st.success("### Verdict Algoritm: BUY")
-        st.title("70.0%")
+        # Calculăm EMA 8
+        istoric['EMA_8'] = istoric['Close'].ewm(span=8, adjust=False).mean()
+        
+        fig = go.Figure()
+        
+        # Lumanari
+        fig.add_trace(go.Candlestick(x=istoric.index, open=istoric['Open'], high=istoric['High'], low=istoric['Low'], close=istoric['Close'], name="Preț"))
+        
+        # Medii Mobile
+        fig.add_trace(go.Scatter(x=istoric.index, y=istoric['EMA_8'], name='EMA 8', line=dict(color='yellow', width=1)))
+        fig.add_trace(go.Scatter(x=istoric.index, y=istoric['EMA_20'], name='EMA 20', line=dict(color='orange', width=1)))
+        fig.add_trace(go.Scatter(x=istoric.index, y=istoric['EMA_50'], name='EMA 50', line=dict(color='blue', width=1)))
+        
+        # Eliminăm graficul mic de jos (rangeslider) și setăm tema
+        fig.update_layout(
+            xaxis_rangeslider_visible=False, 
+            template="plotly_white",
+            height=600
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
         
         # 4. MAMI EDGE
         st.markdown("---")
