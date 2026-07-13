@@ -56,7 +56,7 @@ if st.button("🚀 Rulează Analiza Robotului"):
             scor_stiri = 50.0
             
             if raspuns.status_code == 200:
-                soup = BeautifulSoup(raspuns.content, 'xml')
+                soup = BeautifulSoup(raspuns.content, 'html.parser')
                 articole = soup.find_all('item')[:8]
                 cuvinte_bullish = ['bullish', 'growth', 'buy', 'surge', 'beat', 'earnings', 'upgraded', 'success', 'ai', 'demand', 'rally', 'profit', 'higher']
                 cuvinte_bearish = ['bearish', 'sell', 'drop', 'fall', 'miss', 'risk', 'down', 'investigation', 'short', 'loss', 'slump', 'lower', 'inflation', 'cut']
