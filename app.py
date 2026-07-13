@@ -53,7 +53,6 @@ if st.button("🚀 Rulează Analiza"):
         )
         
         st.plotly_chart(fig, use_container_width=True)
-        
         # 4. MAMI EDGE
         st.markdown("---")
         st.subheader("🛡️ MAMI EDGE: Evaluare Multi-Factorială")
