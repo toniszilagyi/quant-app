@@ -52,7 +52,7 @@ if st.button("🚀 Rulează Analiza"):
             st.plotly_chart(fig, use_container_width=True)
 
             # 4. AFIȘARE ȘTIRI (dacă vrei să le cureți, poți itera așa)
-           st.markdown("---")
+st.markdown("---")
 st.subheader("📰 Monitorul de Știri Inteligent & Impact")
 pozitiv = ['bullish', 'breakout', 'surge', 'soars', 'buy', 'growth', 'beat', 'upgraded', 'rally', 'profit', 'ai', 'demand']
 negativ = ['bankruptcy', 'crash', 'investigation', 'fraud', 'bearish', 'slump', 'miss', 'drop', 'fall', 'sell', 'loss', 'down', 'cut']
