@@ -52,13 +52,24 @@ if st.button("🚀 Rulează Analiza"):
             st.plotly_chart(fig, use_container_width=True)
 
             # 4. AFIȘARE ȘTIRI (dacă vrei să le cureți, poți itera așa)
-            st.subheader("📰 Știri recente")
-            url = f"https://news.google.com/rss/search?q={ticker_ales}+stock&hl=en-US&gl=US&ceid=US:en"
-            try:
-                raspuns = requests.get(url, timeout=5)
-                soup = BeautifulSoup(raspuns.content, 'html.parser')
-                articole = soup.find_all('item')[:5]
-                for art in articole:
-                    st.markdown(f"• {art.title.text}")
-            except:
-                st.write("Știrile sunt momentan indisponibile.")
+           st.markdown("---")
+st.subheader("📰 Monitorul de Știri Inteligent & Impact")
+pozitiv = ['bullish', 'breakout', 'surge', 'soars', 'buy', 'growth', 'beat', 'upgraded', 'rally', 'profit', 'ai', 'demand']
+negativ = ['bankruptcy', 'crash', 'investigation', 'fraud', 'bearish', 'slump', 'miss', 'drop', 'fall', 'sell', 'loss', 'down', 'cut']
+url = f"https://news.google.com/rss/search?q={ticker_ales}+stock&hl=en-US&gl=US&ceid=US:en"
+try:
+    raspuns = requests.get(url, timeout=5)
+    soup = BeautifulSoup(raspuns.content, 'html.parser')
+    articole = soup.find_all('item')[:10]
+    for art in articole:
+        titlu = art.title.text
+        titlu_lower = titlu.lower()
+        if any(word in titlu_lower for word in pozitiv):
+            emoji = "🟢"
+        elif any(word in titlu_lower for word in negativ):
+            emoji = "🔴"
+        else:
+            emoji = "⚪"
+        st.markdown(f"{emoji} {titlu}")
+except:
+    st.info("Monitorul de știri este momentan indisponibil.")
