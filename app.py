@@ -52,6 +52,18 @@ if st.button("🚀 Rulează Analiza"):
             fig.add_trace(go.Scatter(x=istoric.index, y=istoric['EMA_20'], name='EMA 20', line=dict(color='orange')))
             fig.add_trace(go.Scatter(x=istoric.index, y=istoric['EMA_50'], name='EMA 50', line=dict(color='blue')))
             st.plotly_chart(fig, use_container_width=True)
+            # Calculăm un scor simplu pentru verdict
+            procent_verdict = 50 + (rsi_acum - 50) * 0.5 + (20 if ultimul_pret > istoric['EMA_50'].iloc[-1] else -20)
+            procent_verdict = max(min(procent_verdict, 99), 1) # Limităm între 1-99%
+            
+            verdict = "BUY" if procent_verdict > 55 else ("SELL" if procent_verdict < 45 else "HOLD")
+            culoare_caseta = "green" if verdict == "BUY" else ("red" if verdict == "SELL" else "grey")
+
+            st.success(f"### Verdict Algoritm: 📈 {verdict}")
+            st.write(f"Context general: {'Constructiv. Management optim de risc indicat.' if verdict == 'BUY' else 'Prudență recomandată.'}")
+            st.title(f"{procent_verdict:.1f}%")
+            
+            st.markdown("---")
 
             # 3. MAMI EDGE (Aliniat corect în interiorul butonului)
             st.markdown("---")
