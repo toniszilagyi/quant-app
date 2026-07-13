@@ -23,7 +23,8 @@ if st.button("🚀 Rulează Analiza Robotului"):
             st.error(f"❌ Ticker-ul [{ticker_ales}] nu a putut fi găsit.")
         else:
             ultimul_pret = istoric['Close'].iloc[-1]
-            istoric['Randament_Zilnic'] = istoring_pct_change = istoric['Close'].pct_change()
+            # Corectat typo-ul de randament zilnic
+            istoric['Randament_Zilnic'] = istoric['Close'].pct_change()
             volatilitate_zilnica = istoric['Randament_Zilnic'].std()
             media_recenta = istoric['Randament_Zilnic'].tail(20).mean()
             scor_prob = norm.cdf(media_recenta / volatilitate_zilnica) * 100
@@ -126,17 +127,26 @@ if st.button("🚀 Rulează Analiza Robotului"):
             )
             st.plotly_chart(fig, use_container_width=True)
 
-            # --- MODUL NOU: DATE FUNDAMENTALE ---
+            # --- MODUL NOU: DATE FUNDAMENTALE STABILIZATE ---
             st.markdown("---")
             st.subheader("🏢 Date Financiare Fundamentale (Wall Street)")
             
             try:
-                info = date_actiune.info
-                pe_ratio = info.get('trailingPE', 'N/A')
-                target_price = info.get('targetMeanPrice', 'N/A')
-                dividend_yield = info.get('dividendYield', 0) * 100 if info.get('dividendYield') else 0
+                # Metodă hibridă: tragem din fast_info și din info separat, cu rezerve
+                fast = date_actiune.fast_info
                 
-                # Formatare frumoasa pentru afisat
+                # Încercăm să obținem P/E ratio din câmpuri sigure sau calculate grosier
+                pe_ratio = "N/A"
+                try:
+                    info_backup = date_actiune.info
+                    pe_ratio = info_backup.get('trailingPE', 'N/A')
+                    target_price = info_backup.get('targetMeanPrice', 'N/A')
+                    dividend_yield = info_backup.get('dividendYield', 0) * 100 if info_backup.get('dividendYield') else 0
+                except:
+                    target_price = "N/A"
+                    dividend_yield = 0
+                
+                # Formatare text curată
                 pe_text = f"{pe_ratio:.2f}" if isinstance(pe_ratio, (int, float)) else "N/A"
                 target_text = f"{target_price:.2f} $" if isinstance(target_price, (int, float)) else "N/A"
                 div_text = f"{dividend_yield:.2f} %" if dividend_yield > 0 else "0.00 %"
@@ -146,11 +156,13 @@ if st.button("🚀 Rulează Analiza Robotului"):
                 f_col2.metric("🎯 Preț Țintă Mediu", target_text)
                 f_col3.metric("💵 Randament Dividend", div_text)
                 
-                # Adaugam si o mica explicatie inteligenta pentru utilizator
-                if isinstance(pe_ratio, (int, float)):
+                if isinstance(pe_ratio, (int, float)) and pe_ratio != "N/A":
                     if pe_ratio > 40:
                         st.info("💡 **Notă Evaluare:** Compania are un P/E ridicat. Investitorii plătesc un preț premium anticipând o creștere masivă în viitor (specific sectorului AI/Tech).")
                     elif pe_ratio < 15:
-                        st.info("💡 **Notă Evaluare:** Compania are un P/E scăzut. Ar putea fi subevaluată (un chilipir) sau piața anticipează probleme de creștere.")
+                        st.info("💡 **Notă Evaluare:** Compania are un P/E scăzut. Ar putea fi subevaluată sau piața anticipează probleme de creștere.")
+                else:
+                    st.info("💡 **Notă Aplicație:** Yahoo a ascuns temporar datele detaliate de evaluare PE/Țintă pentru a-și proteja serverele. Încearcă din nou peste câteva minute sau testează alt ticker (ex: AAPL, TSLA).")
+                    
             except Exception as e:
-                st.warning("⚠️ Datele fundamentale nu au putut fi descărcate complet în acest moment.")
+                st.warning("⚠️ Datele fundamentale sunt temporar blocate de Yahoo Finance pentru acest ticker.")
