@@ -50,7 +50,7 @@ if st.button("🚀 Rulează Analiza Robotului"):
             if rsi_acum < 70 and rsi_acum > 30: puncte_tehnice += 1
             scor_tehnic = (puncte_tehnice / 3) * 100
             
-            # --- MOTOR DE ȘTIRI AVANSAT (ANALIZĂ DE SENTIMENT PONDERATĂ) ---
+            # --- MOTOR DE ȘTIRI AVANSAT CURĂȚAT ---
             url = f"https://news.google.com/rss/search?q={ticker_ales}+stock&hl=en-US&gl=US&ceid=US:en"
             raspuns = requests.get(url)
             scor_stiri = 50.0
@@ -60,13 +60,13 @@ if st.button("🚀 Rulează Analiza Robotului"):
                 soup = BeautifulSoup(raspuns.content, 'html.parser')
                 articole = soup.find_all('item')[:10]
                 
-                # Dicționar ponderat de sentiment financiar
-                词典_pozitiv = {
+                # Variabile redenumite standard
+                dictionar_pozitiv = {
                     'bullish': 3, 'breakout': 3, 'surge': 3, 'soars': 3, 'shatters': 3,
                     'buy': 2, 'growth': 2, 'beat': 2, 'earnings': 1, 'upgraded': 2, 
                     'rally': 2, 'profit': 2, 'higher': 1, 'ai': 1, 'demand': 1, 'leads': 1
                 }
-                词典_negativ = {
+                dictionar_negativ = {
                     'bankruptcy': -4, 'crash': -4, 'investigation': -3, 'fraud': -3,
                     'bearish': -3, 'slump': -3, 'miss': -2, 'drop': -2, 'fall': -2,
                     'sell': -2, 'risk': -1, 'down': -1, 'loss': -1, 'lower': -1, 'cut': -2
@@ -80,24 +80,22 @@ if st.button("🚀 Rulează Analiza Robotului"):
                     titlu_lower = titlu.lower()
                     sentiment_articol = 0
                     
-                    for cuvant, pondere in 词典_pozitiv.items():
+                    for cuvant, pondere in dictionar_pozitiv.items():
                         if cuvant in titlu_lower:
                             sentiment_articol += pondere
                             numar_cuvinte_cheie += 1
-                    for cuvant, pondere in 词典_negativ.items():
+                    for cuvant, pondere in dictionar_negativ.items():
                         if cuvant in titlu_lower:
                             sentiment_articol += pondere
                             numar_cuvinte_cheie += 1
                     
                     scor_total_sentiment += sentiment_articol
                     
-                    # Salvăm titlul și un indicator vizual pentru utilizator
                     if sentiment_articol > 0: emoji_stire = "🟢"
                     elif sentiment_articol < 0: emoji_stire = "🔴"
                     else: emoji_stire = "⚪"
                     stiri_gasite.append(f"{emoji_stire} {titlu}")
                 
-                # Calculăm scorul final de știri pe o scară de la 0 la 100
                 if numar_cuvinte_cheie > 0:
                     grosier_scor = 50 + (scor_total_sentiment * 7)
                     scor_stiri = max(0, min(100, grosier_scor))
@@ -135,7 +133,6 @@ if st.button("🚀 Rulează Analiza Robotului"):
             st.subheader("📊 Grafic Avansat Candlestick (Fără întreruperi de weekend)")
             
             date_grafic = istoric.tail(90).copy()
-            # Transformăm indexul în text formatat pentru a elimina golurile de weekend din Plotly
             date_grafic['Data_Str'] = date_grafic.index.strftime('%Y-%m-%d')
             
             fig = go.Figure()
@@ -156,12 +153,11 @@ if st.button("🚀 Rulează Analiza Robotului"):
                 margin=dict(l=10, r=10, t=10, b=10),
                 xaxis_rangeslider_visible=False,
                 template="plotly_white",
-                xaxis=dict(type='category', nticks=10), # Forțează Plotly să trateze axa ca pe categorii continue
+                xaxis=dict(type='category', nticks=10),
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
             )
             st.plotly_chart(fig, use_container_width=True)
 
-            # --- SECȚIUNEA NOUĂ: MONITORUL DE ȘTIRI LIVE ---
             st.markdown("---")
             st.subheader("📰 Monitorul de Știri Inteligent & Impact")
             if stiri_gasite:
