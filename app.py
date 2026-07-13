@@ -23,7 +23,7 @@ if st.button("🚀 Rulează Analiza Robotului"):
             st.error(f"❌ Ticker-ul [{ticker_ales}] nu a putut fi găsit.")
         else:
             ultimul_pret = istoric['Close'].iloc[-1]
-            istoric['Randament_Zilnic'] = istoric['Close'].pct_change()
+            istoric['Randament_Zilnic'] = istoring_pct_change = istoric['Close'].pct_change()
             volatilitate_zilnica = istoric['Randament_Zilnic'].std()
             media_recenta = istoric['Randament_Zilnic'].tail(20).mean()
             scor_prob = norm.cdf(media_recenta / volatilitate_zilnica) * 100
@@ -103,12 +103,9 @@ if st.button("🚀 Rulează Analiza Robotului"):
             st.markdown("---")
             st.subheader("📊 Grafic Avansat Candlestick (Ultimele 90 de zile)")
             
-            # Filtram ultimele 90 de zile pentru un grafic aerisit
             date_grafic = istoric.tail(90)
-            
             fig = go.Figure()
             
-            # Adaugam lumandarile (Open, High, Low, Close)
             fig.add_trace(go.Candlestick(
                 x=date_grafic.index,
                 open=date_grafic['Open'],
@@ -118,16 +115,42 @@ if st.button("🚀 Rulează Analiza Robotului"):
                 name='Preț Acțiune'
             ))
             
-            # Adaugam liniile EMA pentru strategii tehnice
-            fig.add_trace(go.Scatter(x=date_grafic.index, y=date_grafic['EMA_20'], mode='lines', name='EMA 20 (Scurt)', line=dict(color='orange', width=1.5)))
-            fig.add_trace(go.Scatter(x=date_grafic.index, y=date_grafic['EMA_50'], mode='lines', name='EMA 50 (Lung)', line=dict(color='blue', width=1.5)))
+            fig.add_trace(go.Scatter(x=date_grafic.index, y=date_grafic['EMA_20'], mode='lines', name='EMA 20', line=dict(color='orange', width=1.5)))
+            fig.add_trace(go.Scatter(x=date_grafic.index, y=date_grafic['EMA_50'], mode='lines', name='EMA 50', line=dict(color='blue', width=1.5)))
             
-            # Design grafic curat
             fig.update_layout(
                 margin=dict(l=10, r=10, t=10, b=10),
                 xaxis_rangeslider_visible=False,
                 template="plotly_white",
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
             )
-            
             st.plotly_chart(fig, use_container_width=True)
+
+            # --- MODUL NOU: DATE FUNDAMENTALE ---
+            st.markdown("---")
+            st.subheader("🏢 Date Financiare Fundamentale (Wall Street)")
+            
+            try:
+                info = date_actiune.info
+                pe_ratio = info.get('trailingPE', 'N/A')
+                target_price = info.get('targetMeanPrice', 'N/A')
+                dividend_yield = info.get('dividendYield', 0) * 100 if info.get('dividendYield') else 0
+                
+                # Formatare frumoasa pentru afisat
+                pe_text = f"{pe_ratio:.2f}" if isinstance(pe_ratio, (int, float)) else "N/A"
+                target_text = f"{target_price:.2f} $" if isinstance(target_price, (int, float)) else "N/A"
+                div_text = f"{dividend_yield:.2f} %" if dividend_yield > 0 else "0.00 %"
+                
+                f_col1, f_col2, f_col3 = st.columns(3)
+                f_col1.metric("📊 P/E Ratio (Evaluare)", pe_text)
+                f_col2.metric("🎯 Preț Țintă Mediu", target_text)
+                f_col3.metric("💵 Randament Dividend", div_text)
+                
+                # Adaugam si o mica explicatie inteligenta pentru utilizator
+                if isinstance(pe_ratio, (int, float)):
+                    if pe_ratio > 40:
+                        st.info("💡 **Notă Evaluare:** Compania are un P/E ridicat. Investitorii plătesc un preț premium anticipând o creștere masivă în viitor (specific sectorului AI/Tech).")
+                    elif pe_ratio < 15:
+                        st.info("💡 **Notă Evaluare:** Compania are un P/E scăzut. Ar putea fi subevaluată (un chilipir) sau piața anticipează probleme de creștere.")
+            except Exception as e:
+                st.warning("⚠️ Datele fundamentale nu au putut fi descărcate complet în acest moment.")
