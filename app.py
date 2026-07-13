@@ -23,7 +23,6 @@ if st.button("🚀 Rulează Analiza Robotului"):
             st.error(f"❌ Ticker-ul [{ticker_ales}] nu a putut fi găsit.")
         else:
             ultimul_pret = istoric['Close'].iloc[-1]
-            # Corectat typo-ul de randament zilnic
             istoric['Randament_Zilnic'] = istoric['Close'].pct_change()
             volatilitate_zilnica = istoric['Randament_Zilnic'].std()
             media_recenta = istoric['Randament_Zilnic'].tail(20).mean()
@@ -51,28 +50,59 @@ if st.button("🚀 Rulează Analiza Robotului"):
             if rsi_acum < 70 and rsi_acum > 30: puncte_tehnice += 1
             scor_tehnic = (puncte_tehnice / 3) * 100
             
-            # Știri
+            # --- MOTOR DE ȘTIRI AVANSAT (ANALIZĂ DE SENTIMENT PONDERATĂ) ---
             url = f"https://news.google.com/rss/search?q={ticker_ales}+stock&hl=en-US&gl=US&ceid=US:en"
             raspuns = requests.get(url)
             scor_stiri = 50.0
+            stiri_gasite = []
             
             if raspuns.status_code == 200:
                 soup = BeautifulSoup(raspuns.content, 'html.parser')
-                articole = soup.find_all('item')[:8]
-                cuvinte_bullish = ['bullish', 'growth', 'buy', 'surge', 'beat', 'earnings', 'upgraded', 'success', 'ai', 'demand', 'rally', 'profit', 'higher']
-                cuvinte_bearish = ['bearish', 'sell', 'drop', 'fall', 'miss', 'risk', 'down', 'investigation', 'short', 'loss', 'slump', 'lower', 'inflation', 'cut']
+                articole = soup.find_all('item')[:10]
                 
-                scor_total = 0
+                # Dicționar ponderat de sentiment financiar
+                词典_pozitiv = {
+                    'bullish': 3, 'breakout': 3, 'surge': 3, 'soars': 3, 'shatters': 3,
+                    'buy': 2, 'growth': 2, 'beat': 2, 'earnings': 1, 'upgraded': 2, 
+                    'rally': 2, 'profit': 2, 'higher': 1, 'ai': 1, 'demand': 1, 'leads': 1
+                }
+                词典_negativ = {
+                    'bankruptcy': -4, 'crash': -4, 'investigation': -3, 'fraud': -3,
+                    'bearish': -3, 'slump': -3, 'miss': -2, 'drop': -2, 'fall': -2,
+                    'sell': -2, 'risk': -1, 'down': -1, 'loss': -1, 'lower': -1, 'cut': -2
+                }
+                
+                scor_total_sentiment = 0
+                numar_cuvinte_cheie = 0
+                
                 for art in articole:
-                    titlu = art.title.text.lower()
-                    for cuvant in cuvinte_bullish:
-                        if cuvant in titlu: scor_total += 1
-                    for cuvant in cuvinte_bearish:
-                        if cuvant in titlu: scor_total -= 1
+                    titlu = art.title.text
+                    titlu_lower = titlu.lower()
+                    sentiment_articol = 0
+                    
+                    for cuvant, pondere in 词典_pozitiv.items():
+                        if cuvant in titlu_lower:
+                            sentiment_articol += pondere
+                            numar_cuvinte_cheie += 1
+                    for cuvant, pondere in 词典_negativ.items():
+                        if cuvant in titlu_lower:
+                            sentiment_articol += pondere
+                            numar_cuvinte_cheie += 1
+                    
+                    scor_total_sentiment += sentiment_articol
+                    
+                    # Salvăm titlul și un indicator vizual pentru utilizator
+                    if sentiment_articol > 0: emoji_stire = "🟢"
+                    elif sentiment_articol < 0: emoji_stire = "🔴"
+                    else: emoji_stire = "⚪"
+                    stiri_gasite.append(f"{emoji_stire} {titlu}")
                 
-                if scor_total > 5: scor_total = 5
-                if scor_total < -5: scor_total = -5
-                scor_stiri = 50 + (scor_total * 10)
+                # Calculăm scorul final de știri pe o scară de la 0 la 100
+                if numar_cuvinte_cheie > 0:
+                    grosier_scor = 50 + (scor_total_sentiment * 7)
+                    scor_stiri = max(0, min(100, grosier_scor))
+                else:
+                    scor_stiri = 50.0
 
             scor_global = (scor_prob * 0.30) + (scor_tehnic * 0.40) + (scor_stiri * 0.30)
             
@@ -99,16 +129,19 @@ if st.button("🚀 Rulează Analiza Robotului"):
             st.subheader("Defalcarea scorurilor pe Motoare:")
             st.progress(int(scor_prob), text=f"🔢 Motor Probabilități: {scor_prob:.1f}%")
             st.progress(int(scor_tehnic), text=f"📈 Motor Analiză Tehnică: {scor_tehnic:.1f}%")
-            st.progress(int(scor_stiri), text=f"📰 Motor Sentiment Știri: {scor_stiri:.1f}%")
+            st.progress(int(scor_stiri), text=f"📰 Motor Sentiment Știri (Ponderat): {scor_stiri:.1f}%")
             
             st.markdown("---")
-            st.subheader("📊 Grafic Avansat Candlestick (Ultimele 90 de zile)")
+            st.subheader("📊 Grafic Avansat Candlestick (Fără întreruperi de weekend)")
             
-            date_grafic = istoric.tail(90)
+            date_grafic = istoric.tail(90).copy()
+            # Transformăm indexul în text formatat pentru a elimina golurile de weekend din Plotly
+            date_grafic['Data_Str'] = date_grafic.index.strftime('%Y-%m-%d')
+            
             fig = go.Figure()
             
             fig.add_trace(go.Candlestick(
-                x=date_grafic.index,
+                x=date_grafic['Data_Str'],
                 open=date_grafic['Open'],
                 high=date_grafic['High'],
                 low=date_grafic['Low'],
@@ -116,53 +149,23 @@ if st.button("🚀 Rulează Analiza Robotului"):
                 name='Preț Acțiune'
             ))
             
-            fig.add_trace(go.Scatter(x=date_grafic.index, y=date_grafic['EMA_20'], mode='lines', name='EMA 20', line=dict(color='orange', width=1.5)))
-            fig.add_trace(go.Scatter(x=date_grafic.index, y=date_grafic['EMA_50'], mode='lines', name='EMA 50', line=dict(color='blue', width=1.5)))
+            fig.add_trace(go.Scatter(x=date_grafic['Data_Str'], y=date_grafic['EMA_20'], mode='lines', name='EMA 20', line=dict(color='orange', width=1.5)))
+            fig.add_trace(go.Scatter(x=date_grafic['Data_Str'], y=date_grafic['EMA_50'], mode='lines', name='EMA 50', line=dict(color='blue', width=1.5)))
             
             fig.update_layout(
                 margin=dict(l=10, r=10, t=10, b=10),
                 xaxis_rangeslider_visible=False,
                 template="plotly_white",
+                xaxis=dict(type='category', nticks=10), # Forțează Plotly să trateze axa ca pe categorii continue
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
             )
             st.plotly_chart(fig, use_container_width=True)
 
-            # --- MODUL NOU: DATE FUNDAMENTALE STABILIZATE ---
+            # --- SECȚIUNEA NOUĂ: MONITORUL DE ȘTIRI LIVE ---
             st.markdown("---")
-            st.subheader("🏢 Date Financiare Fundamentale (Wall Street)")
-            
-            try:
-                # Metodă hibridă: tragem din fast_info și din info separat, cu rezerve
-                fast = date_actiune.fast_info
-                
-                # Încercăm să obținem P/E ratio din câmpuri sigure sau calculate grosier
-                pe_ratio = "N/A"
-                try:
-                    info_backup = date_actiune.info
-                    pe_ratio = info_backup.get('trailingPE', 'N/A')
-                    target_price = info_backup.get('targetMeanPrice', 'N/A')
-                    dividend_yield = info_backup.get('dividendYield', 0) * 100 if info_backup.get('dividendYield') else 0
-                except:
-                    target_price = "N/A"
-                    dividend_yield = 0
-                
-                # Formatare text curată
-                pe_text = f"{pe_ratio:.2f}" if isinstance(pe_ratio, (int, float)) else "N/A"
-                target_text = f"{target_price:.2f} $" if isinstance(target_price, (int, float)) else "N/A"
-                div_text = f"{dividend_yield:.2f} %" if dividend_yield > 0 else "0.00 %"
-                
-                f_col1, f_col2, f_col3 = st.columns(3)
-                f_col1.metric("📊 P/E Ratio (Evaluare)", pe_text)
-                f_col2.metric("🎯 Preț Țintă Mediu", target_text)
-                f_col3.metric("💵 Randament Dividend", div_text)
-                
-                if isinstance(pe_ratio, (int, float)) and pe_ratio != "N/A":
-                    if pe_ratio > 40:
-                        st.info("💡 **Notă Evaluare:** Compania are un P/E ridicat. Investitorii plătesc un preț premium anticipând o creștere masivă în viitor (specific sectorului AI/Tech).")
-                    elif pe_ratio < 15:
-                        st.info("💡 **Notă Evaluare:** Compania are un P/E scăzut. Ar putea fi subevaluată sau piața anticipează probleme de creștere.")
-                else:
-                    st.info("💡 **Notă Aplicație:** Yahoo a ascuns temporar datele detaliate de evaluare PE/Țintă pentru a-și proteja serverele. Încearcă din nou peste câteva minute sau testează alt ticker (ex: AAPL, TSLA).")
-                    
-            except Exception as e:
-                st.warning("⚠️ Datele fundamentale sunt temporar blocate de Yahoo Finance pentru acest ticker.")
+            st.subheader("📰 Monitorul de Știri Inteligent & Impact")
+            if stiri_gasite:
+                for stire in stiri_gasite:
+                    st.markdown(stire)
+            else:
+                st.info("Nu au fost găsite știri recente care să poată fi evaluate complet.")
