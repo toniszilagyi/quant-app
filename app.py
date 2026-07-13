@@ -79,9 +79,15 @@ if st.button("🚀 Rulează Analiza"):
             st.subheader("📰 Monitorul de Știri Inteligent")
             url = f"https://news.google.com/rss/search?q={ticker_ales}+stock"
             try:
-                soup = BeautifulSoup(requests.get(url, timeout=5).content, 'html.parser')
-                for art in soup.find_all('item')[:5]:
-                    emoji = "🟢" if any(w in art.title.text.lower() for w in ['bullish','buy','growth']) else "🔴"
-                    st.markdown(f"{emoji} [{art.title.text}]({art.link.text})")
+                raspuns = requests.get(url, timeout=5)
+                soup = BeautifulSoup(raspuns.content, 'html.parser')
+                articole = soup.find_all('item')[:5]
+                for art in articole:
+                    titlu = art.title.text
+                    link = art.link.text
+                    # Logica pentru buline
+                    emoji = "🟢" if any(w in titlu.lower() for w in ['bullish', 'buy', 'growth']) else "🔴"
+                    # Afișare link clicabil
+                    st.markdown(f"{emoji} [{titlu}]({link})")
             except:
                 st.info("Știrile sunt indisponibile momentan.")
