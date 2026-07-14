@@ -93,7 +93,14 @@ if st.button("🚀 Rulează Analiza"):
 
         # Afișare metrică și rating vizual
         col_m1, col_m2 = st.columns([1, 2])
-        col_m1.metric("Scor Final", f"{scor_mami}/100")
+        # Calcul Scor Final
+        scor_total = trend_m + vol_m + rs_m + macro_m + risk_m
+        stele = "★" * int(scor_total / 20) + "☆" * (5 - int(scor_total / 20))
+        
+        # Afișare (Aici era eroarea, am înlocuit scor_mami cu scor_total)
+        col_m1, col_m2 = st.columns([1, 2])
+        col_m1.metric("Scor Final", f"{scor_total}/100")
+        col_m2.write(f"### Rating: {stele}")
         col_m2.write(f"### Rating: {stele}")
 
         with st.expander("Vezi detaliile analizei MAMI EDGE"):
