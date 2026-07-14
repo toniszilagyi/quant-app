@@ -122,6 +122,21 @@ if st.button("🚀 Rulează Analiza"):
         
         scor_final = trend_m + vol_m + rs_m + macro_m + risk_m
         stele = "★" * int(scor_final / 20) + "☆" * (5 - int(scor_final / 20))
+        # Afișare Rating
+        st.subheader("🛡️ MAMI EDGE: Evaluare Multi-Factorială")
+        col_m1, col_m2 = st.columns([1, 2])
+        col_m1.metric("Scor Final", f"{scor_final}/100")
+        col_m2.write(f"### Rating: {stele}")
+
+        # Decizie Strategică
+        st.markdown("---")
+        st.subheader("🤖 Asistent de Decizie Strategic")
+        cols = st.columns(3)
+        cols[0].metric("Swing", "🟢 BUY" if trend_m > 0 else "🔴 WAIT")
+        cols[1].metric("Position", "🟢 BUY" if istoric['EMA_20'].iloc[-1] > istoric['EMA_50'].iloc[-1] else "🔴 HOLD")
+        cols[2].metric("Long Term", "🟢 BULLISH" if macro_m > 0 else "🔴 BEARISH")
+    else:
+        st.error("Date indisponibile.")
             
 
         # Știri
