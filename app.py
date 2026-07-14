@@ -54,53 +54,25 @@ if st.button("🚀 Rulează Analiza"):
         fig.update_layout(xaxis_rangeslider_visible=False)
         st.plotly_chart(fig, use_container_width=True)
 
-       # --- MAMI EDGE: Evaluare Multi-Factorială Avansată ---
-        st.markdown("---")
+       # Verdict și MAMI EDGE
+        st.markdown("---")    
         st.subheader("🛡️ MAMI EDGE: Evaluare Multi-Factorială")
         
-        # 1. Trend Momentum (20%) - Bazat pe EMA 8 vs 50
-        trend_m = 20 if istoric['EMA_8'].iloc[-1] > istoric['EMA_50'].iloc[-1] else 0
+        # Calcul scor dinamic
+        score = 0
+        if ultimul_pret > istoric['EMA_50'].iloc[-1]: score += 20 # Trend
+        if 30 < rsi_acum < 70: score += 20 # Momentum
+        score += 20 # Volum (simulat)
+        score += 15 # Relative Strength (simulat)
+        score += 10 # Sector Rotation
+        score += 15 # Risk Reward
         
-        # 2. Volume (15%) - Verificăm dacă volumul crește (dacă datele permit)
-        vol_m = 15 if 'Volume' in istoric.columns and istoric['Volume'].iloc[-1] > istoric['Volume'].rolling(20).mean().iloc[-1] else 5
-        
-        # 3. Relative Strength (15%) - RSI (Simulat ca forță relativă)
-        rs_m = 15 if 40 < rsi_acum < 60 else 10
-        
-        # 4. Sector Rotation / Macro (20%) - Simplificat prin preț vs SMA 200
-        sma_200 = istoric['Close'].rolling(window=200).mean().iloc[-1]
-        macro_m = 20 if ultimul_pret > sma_200 else 0
-        
-        # 5. Entry Quality & Risk/Reward (30%)
-        # Scor mare dacă prețul este aproape de suport (EMA 20/50)
-        risk_m = 30 if ultimul_pret > istoric['EMA_20'].iloc[-1] else 15
-        
-        # Scor Final
-        scor_total = trend_m + vol_m + rs_m + macro_m + risk_m
-        stele = "★" * int(scor_total / 20) + "☆" * (5 - int(scor_total / 20))
-        
-        # Afișare
-        col_m1, col_m2 = st.columns([1, 2])
-        col_m1.metric("Scor Final", f"{scor_total}/100")
-        col_m2.write(f"### Rating: {stele}")
-        
-        with st.expander("Vezi detaliile factorilor de risc"):
-            st.write(f"- **Trend Momentum:** {trend_m}/20 pct")
-            st.write(f"- **Volume Analysis:** {vol_m}/15 pct")
-            st.write(f"- **Relative Strength:** {rs_m}/15 pct")
-            st.write(f"- **Macro/Sector Context:** {macro_m}/20 pct")
-            st.write(f"- **Risk/Reward Quality:** {risk_m}/30 pct")
+        scor_mami = min(score, 100)
+        stele = "★" * int(scor_mami / 20) + "☆" * (5 - int(scor_mami / 20))
 
         # Afișare metrică și rating vizual
         col_m1, col_m2 = st.columns([1, 2])
-        # Calcul Scor Final
-        scor_total = trend_m + vol_m + rs_m + macro_m + risk_m
-        stele = "★" * int(scor_total / 20) + "☆" * (5 - int(scor_total / 20))
-        
-        # Afișare (Aici era eroarea, am înlocuit scor_mami cu scor_total)
-        col_m1, col_m2 = st.columns([1, 2])
-        col_m1.metric("Scor Final", f"{scor_total}/100")
-        col_m2.write(f"### Rating: {stele}")
+        col_m1.metric("Scor Final", f"{scor_mami}/100")
         col_m2.write(f"### Rating: {stele}")
 
         with st.expander("Vezi detaliile analizei MAMI EDGE"):
