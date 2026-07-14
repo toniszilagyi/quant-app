@@ -63,6 +63,25 @@ if st.button("🚀 Rulează Analiza"):
         cols[2].metric("Long Term", "🟢 BULLISH" if ultimul_pret > istoric['SMA_200'].iloc[-1] else "🔴 BEARISH")
         
         st.info("💡 Deciziile sunt bazate pe analiza tehnică. Nu reprezintă sfaturi financiare!")
+        # --- CALCULATR ATR PENTRU MANAGEMENTUL RISCULUI ---
+        st.markdown("---")
+        st.subheader("🛡️ Managementul Riscului (ATR)")
+        
+        # Calcul ATR (14 perioade)
+        high_low = istoric['High'] - istoric['Low']
+        high_close = abs(istoric['High'] - istoric['Close'].shift())
+        low_close = abs(istoric['Low'] - istoric['Close'].shift())
+        tr = high_low.combine(high_close, max).combine(low_close, max)
+        atr = tr.rolling(window=14).mean().iloc[-1]
+        
+        # Calcul Stop Loss (recomandare 2x ATR)
+        stop_loss = ultimul_pret - (2 * atr)
+        
+        col1, col2 = st.columns(2)
+        col1.metric("ATR (Volatilitate)", f"{atr:.2f} $")
+        col2.metric("Stop Loss Recomandat", f"{stop_loss:.2f} $")
+        
+        st.write(f"ℹ️ *Dacă prețul scade sub {stop_loss:.2f} $, volatilitatea curentă indică faptul că trendul a fost invalidat.*")
 
         # Știri
         st.subheader("📰 Monitorul de Știri")
