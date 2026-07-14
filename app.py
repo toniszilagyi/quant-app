@@ -105,5 +105,40 @@ if st.sidebar.button("🔄 Actualizează Radar"):
         # Afișăm Top 5
         for ticker, change in performeri[:5]:
             st.sidebar.write(f"🟢 **{ticker}**: {change:+.2f}%")
+            import plotly.express as px
+import pandas as pd
+import yfinance as yf
+
+# --- ANALIZĂ PERFORMANȚĂ SECTOARE LIVE ---
+st.sidebar.title("📊 Performanță Live")
+
+if st.sidebar.button("🔄 Actualizează Date Live"):
+    sectoare_live = {
+        "Technology": ["NVDA", "AMD", "MSFT", "AAPL"],
+        "Financial": ["JPM", "BAC", "GS", "MS"],
+        "Energy": ["XOM", "CVX", "SLB"]
+    }
+    
+    date_sectoare = []
+    
+    for nume, tickere in sectoare_live.items():
+        media_schimbare = 0
+        count = 0
+        for t in tickere:
+            try:
+                hist = yf.Ticker(t).history(period="2d")
+                change = ((hist['Close'].iloc[-1] - hist['Close'].iloc[-2]) / hist['Close'].iloc[-2]) * 100
+                media_schimbare += change
+                count += 1
+            except: continue
+        if count > 0:
+            date_sectoare.append({"Sector": nume, "Performanță": media_schimbare / count})
+
+    # Creăm graficul dinamic
+    df_live = pd.DataFrame(date_sectoare)
+    fig = px.bar(df_live, x='Performanță', y='Sector', orientation='h',
+                 color='Performanță', color_continuous_scale=['red', 'green'])
+    
+    st.sidebar.plotly_chart(fig, use_container_width=True)
 
         
