@@ -77,7 +77,7 @@ if st.button("🚀 Rulează Analiza"):
         fig.add_trace(go.Scatter(x=istoric.index, y=istoric['EMA_50'], name='EMA 50', line=dict(color='blue', width=1)))
         fig.update_layout(xaxis_rangeslider_visible=False, height=500)
         st.plotly_chart(fig, use_container_width=True)
-        # --- SCANNER DE PIAȚĂ AUTOMAT ---
+       DE PIAȚĂ AUTOMAT ---
 st.sidebar.markdown("---")
 if st.sidebar.button("🔍 Scanează Oportunități"):
     with st.spinner("Se scanează piața..."):
@@ -102,7 +102,13 @@ if st.sidebar.button("🔍 Scanează Oportunități"):
                     if scor >= 80:
                         rezultate.append({"Ticker": ticker, "Preț": round(ultimul_pret, 2), "Scor MAMI": scor})
             except:
-
+                continue
+        
+        if rezultate:
+            st.sidebar.write("### ✅ Acțiuni cu Scor Mare:")
+            st.sidebar.table(rezultate)
+        else:
+            st.sidebar.write("Nicio oportunitate găsită momentan.")
         # MAMI EDGE - Evaluare Multi-Factorială
         st.markdown("---")
         st.subheader("🛡️ MAMI EDGE: Evaluare Multi-Factorială")
