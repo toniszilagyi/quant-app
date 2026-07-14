@@ -160,5 +160,5 @@ if st.sidebar.button("🔍 Scanează Oportunități"):
                 st.markdown(f"{emoji} [{art.title.text}]({art.link.text})")
         except:
             st.info("Știri indisponibile.")
-    else:
+        else:
         st.error("Ticker invalid.")
