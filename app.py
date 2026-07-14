@@ -77,6 +77,31 @@ if st.button("🚀 Rulează Analiza"):
         fig.add_trace(go.Scatter(x=istoric.index, y=istoric['EMA_50'], name='EMA 50', line=dict(color='blue', width=1)))
         fig.update_layout(xaxis_rangeslider_visible=False, height=500)
         st.plotly_chart(fig, use_container_width=True)
+        # --- SCANNER DE PIAȚĂ AUTOMAT ---
+st.sidebar.markdown("---")
+if st.sidebar.button("🔍 Scanează Oportunități"):
+    with st.spinner("Se scanează piața..."):
+        # Lista de acțiuni de scanat
+        lista_scan = ["NVDA", "AAPL", "TSLA", "AMD", "MSFT", "GOOGL", "AMZN", "META", "NFLX", "NVDA"]
+        rezultate = []
+        
+        for ticker in lista_scan:
+            try:
+                t = yf.Ticker(ticker)
+                hist = t.history(period="6mo")
+                if not hist.empty:
+                    ultimul_pret = hist['Close'].iloc[-1]
+                    ema_50 = hist['Close'].ewm(span=50, adjust=False).mean().iloc[-1]
+                    
+                    # Logica rapidă de scor
+                    scor = 0
+                    if ultimul_pret > ema_50: scor += 50
+                    scor += 30 # Volum simulat
+                    scor += 20 # Trend
+                    
+                    if scor >= 80:
+                        rezultate.append({"Ticker": ticker, "Preț": round(ultimul_pret, 2), "Scor MAMI": scor})
+            except:
 
         # MAMI EDGE - Evaluare Multi-Factorială
         st.markdown("---")
