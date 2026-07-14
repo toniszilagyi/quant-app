@@ -115,5 +115,5 @@ if st.sidebar.button("🔄 Actualizează Radar"):
                 st.markdown(f"⚪ [{art.title.text}]({art.link.text})")
         except:
             st.info("Știri indisponibile.")
-    else:
+        else:
         st.error("Date indisponibile pentru acest Ticker.")
