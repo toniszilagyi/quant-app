@@ -77,7 +77,7 @@ if st.button("🚀 Rulează Analiza"):
         fig.add_trace(go.Scatter(x=istoric.index, y=istoric['EMA_50'], name='EMA 50', line=dict(color='blue', width=1)))
         fig.update_layout(xaxis_rangeslider_visible=False, height=500)
         st.plotly_chart(fig, use_container_width=True)
-       DE PIAȚĂ AUTOMAT ---
+      # --- SCANNER DE PIAȚĂ AUTOMAT ---
 st.sidebar.markdown("---")
 if st.sidebar.button("🔍 Scanează Oportunități"):
     with st.spinner("Se scanează piața..."):
