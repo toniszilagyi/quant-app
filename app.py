@@ -113,6 +113,15 @@ if st.button("🚀 Rulează Analiza"):
         col3.metric("Long Term (luni/ani)", decizii["Long Term"])
         
         st.info("💡 **Notă strategică:** Deciziile sunt bazate pe analiza tehnică pură. Nu reprezintă sfaturi financiare!")
+        # Calcul Scor Multi-Factorial
+        trend_m = 20 if istoric['EMA_8'].iloc[-1] > istoric['EMA_50'].iloc[-1] else 0
+        vol_m = 15
+        rs_m = 15 if 40 < rsi_acum < 60 else 10
+        macro_m = 20 if ultimul_pret > istoric['Close'].rolling(200).mean().iloc[-1] else 0
+        risk_m = 30 if ultimul_pret > istoric['EMA_20'].iloc[-1] else 15
+        
+        scor_final = trend_m + vol_m + rs_m + macro_m + risk_m
+        stele = "★" * int(scor_final / 20) + "☆" * (5 - int(scor_final / 20))
             
 
         # Știri
