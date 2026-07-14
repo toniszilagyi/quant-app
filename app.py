@@ -11,24 +11,7 @@ st.title("🧠 Quant Analyzer Pro")
 st.sidebar.title("📡 Radar Piață")
 st.sidebar.write("Top Acțiuni (Volum & Volatilitate)")
 
-# Lista extinsă de urmărit (poți adăuga orice ticker dorești)
-radar_list = ["NVDA", "AAPL", "TSLA", "AMD", "MSFT", "GOOGL", "AMZN", "META"]
 
-for ticker in radar_list:
-    try:
-        t = yf.Ticker(ticker)
-        data = t.history(period="2d")
-        pret = data['Close'].iloc[-1]
-        change = (data['Close'].pct_change().iloc[-1]) * 100
-        volum = data['Volume'].iloc[-1] / 1_000_000 # În milioane
-        
-        color = "🟢" if change >= 0 else "🔴"
-        st.sidebar.markdown(f"{color} **{ticker}**")
-        st.sidebar.write(f"Price: {pret:.2f}$ | Vol: {volum:.1f}M")
-        st.sidebar.write(f"Change: {change:+.2f}%")
-        st.sidebar.markdown("---")
-    except:
-        continue
 
 # Lista extinsă de urmărit (poți adăuga orice ticker dorești)
 radar_list = ["NVDA", "AAPL", "TSLA", "AMD", "MSFT", "GOOGL", "AMZN", "META"]
