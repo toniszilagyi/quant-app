@@ -7,6 +7,22 @@ import plotly.graph_objects as go
 # Configurare pagină
 st.set_page_config(page_title="Quant Analyzer Pro", page_icon="🧠", layout="wide")
 st.title("🧠 Quant Analyzer Pro")
+# --- RADAR PIAȚĂ (Sidebar) ---
+st.sidebar.title("📡 Radar Piață")
+st.sidebar.write("Top 5 Acțiuni (Volum Mare)")
+
+# Lista simulată de tickere populare pentru radar (poți adăuga ce vrei)
+radar_list = ["NVDA", "AAPL", "TSLA", "AMD", "MSFT"]
+
+for ticker in radar_list:
+    try:
+        t = yf.Ticker(ticker)
+        pret = t.history(period="1d")['Close'].iloc[-1]
+        change = ((t.history(period="2d")['Close'].pct_change()).iloc[-1]) * 100
+        color = "🟢" if change >= 0 else "🔴"
+        st.sidebar.write(f"{color} **{ticker}**: {pret:.2f}$ ({change:+.2f}%)")
+    except:
+        st.sidebar.write(f"⚪ {ticker}: Date indisponibile")
 
 ticker_ales = st.text_input("Ticker acțiune:", "NVDA").upper()
 col1, col2 = st.columns(2)
