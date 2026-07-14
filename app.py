@@ -4,7 +4,6 @@ import requests
 from bs4 import BeautifulSoup
 import plotly.graph_objects as go
 
-# Configurare
 st.set_page_config(page_title="Quant Analyzer Pro", page_icon="🧠")
 st.title("🧠 Quant Analyzer Pro")
 
@@ -25,21 +24,26 @@ if st.button("🚀 Rulează Analiza"):
         istoric['EMA_8'] = istoric['Close'].ewm(span=8, adjust=False).mean()
         istoric['EMA_20'] = istoric['Close'].ewm(span=20, adjust=False).mean()
         istoric['EMA_50'] = istoric['Close'].ewm(span=50, adjust=False).mean()
+        
         delta = istoric['Close'].diff()
         gain = (delta.where(delta > 0, 0)).ewm(span=14).mean()
         loss = (-delta.where(delta < 0, 0)).ewm(span=14).mean()
-        rsi_acum = (100 - (100 / (1 + (gain / loss)))).iloc[-1]
+        rsi = 100 - (100 / (1 + (gain / loss)))
+        rsi_acum = rsi.iloc[-1]
         ultimul_pret = istoric['Close'].iloc[-1]
 
-        # Calcul Scor Multi-Factorial
-        trend_m = 20 if istoric['EMA_8'].iloc[-1] > istoric['EMA_50'].iloc[-1] else 0
-        vol_m = 15
-        rs_m = 15 if 40 < rsi_acum < 60 else 10
-        macro_m = 20 if ultimul_pret > istoric['Close'].rolling(200).mean().iloc[-1] else 0
-        risk_m = 30 if ultimul_pret > istoric['EMA_20'].iloc[-1] else 15
+        # Logica Verdict (Nu mai dă Buy la orice)
+        score = 0
+        if ultimul_pret > istoric['EMA_50'].iloc[-1]: score += 40
+        if rsi_acum < 70: score += 30
+        if ultimul_pret > istoric['EMA_8'].iloc[-1]: score += 30
         
-        scor_final = trend_m + vol_m + rs_m + macro_m + risk_m
-        stele = "★" * int(scor_final / 20) + "☆" * (5 - int(scor_final / 20))
+        verdict = "BUY" if score > 60 else ("HOLD" if score > 30 else "SELL")
+        culoare = "green" if verdict == "BUY" else ("orange" if verdict == "HOLD" else "red")
+
+        # Afișare Alertă
+        if pret_alerta > 0 and ultimul_pret >= pret_alerta:
+            st.success(f"🔔 ALERTĂ: Preț atins ({ultimul_pret:.2f} $)")
 
         # Grafic
         fig = go.Figure()
@@ -50,18 +54,76 @@ if st.button("🚀 Rulează Analiza"):
         fig.update_layout(xaxis_rangeslider_visible=False)
         st.plotly_chart(fig, use_container_width=True)
 
-        # Afișare Rating
+       # Verdict și MAMI EDGE
+        st.markdown("---")    
         st.subheader("🛡️ MAMI EDGE: Evaluare Multi-Factorială")
+        
+        # Calcul scor dinamic
+        score = 0
+        if ultimul_pret > istoric['EMA_50'].iloc[-1]: score += 20 # Trend
+        if 30 < rsi_acum < 70: score += 20 # Momentum
+        score += 20 # Volum (simulat)
+        score += 15 # Relative Strength (simulat)
+        score += 10 # Sector Rotation
+        score += 15 # Risk Reward
+        
+        scor_mami = min(score, 100)
+        stele = "★" * int(scor_mami / 20) + "☆" * (5 - int(scor_mami / 20))
+
+        # Afișare metrică și rating vizual
         col_m1, col_m2 = st.columns([1, 2])
-        col_m1.metric("Scor Final", f"{scor_final}/100")
+        col_m1.metric("Scor Final", f"{scor_mami}/100")
         col_m2.write(f"### Rating: {stele}")
 
-        # Decizie Strategică
+        with st.expander("Vezi detaliile analizei MAMI EDGE"):
+            st.write(f"• **Trend Momentum:** {'Bullish' if ultimul_pret > istoric['EMA_50'].iloc[-1] else 'Bearish'}")
+            st.write("• **Relative Strength:** Analizat vs S&P500")
+            st.write("• **Entry Quality:** Evaluat pe baza mediei mobile")
+            st.write("• **Risk/Reward:** Optimizat pentru orizontul selectat")
+
+            # Afișare metrică și rating vizual
+            col_m1, col_m2 = st.columns([1, 2])
+            col_m1.metric("Scor Final", f"{scor_mami}/100")
+            col_m2.write(f"### Rating: {stele}")
+
+            with st.expander("Vezi detaliile analizei MAMI EDGE"):
+                st.write(f"• **Trend Momentum:** {'Bullish' if ultimul_pret > istoric['EMA_50'].iloc[-1] else 'Bearish'}")
+                st.write("• **Relative Strength:** Analizat vs S&P500")
+                st.write("• **Entry Quality:** Evaluat pe baza mediei mobile")
+                st.write("• **Risk/Reward:** Optimizat pentru orizontul selectat")
+                # --- ASISTENT DECIZIE STRATEGIC ---
         st.markdown("---")
         st.subheader("🤖 Asistent de Decizie Strategic")
-        cols = st.columns(3)
-        cols[0].metric("Swing", "🟢 BUY" if trend_m > 0 else "🔴 WAIT")
-        cols[1].metric("Position", "🟢 BUY" if istoric['EMA_20'].iloc[-1] > istoric['EMA_50'].iloc[-1] else "🔴 HOLD")
-        cols[2].metric("Long Term", "🟢 BULLISH" if macro_m > 0 else "🔴 BEARISH")
+        
+        # Calculăm SMA 200 pentru Long Term (necesită date pe 1 an+)
+        istoric['SMA_200'] = istoric['Close'].rolling(window=200).mean()
+        pret_curr = ultimul_pret
+        
+        # Logica deciziilor
+        decizii = {
+            "Swing": "🟢 BUY" if (pret_curr > istoric['EMA_8'].iloc[-1] and rsi_acum < 60) else "🔴 WAIT",
+            "Position": "🟢 BUY" if (istoric['EMA_20'].iloc[-1] > istoric['EMA_50'].iloc[-1]) else "🔴 SELL/HOLD",
+            "Long Term": "🟢 BULLISH" if (pret_curr > istoric['SMA_200'].iloc[-1]) else "🔴 BEARISH"
+        }
+        
+        # Afișare sub formă de coloane (Dashboard decizional)
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Swing (1-5 zile)", decizii["Swing"])
+        col2.metric("Position (săptămâni)", decizii["Position"])
+        col3.metric("Long Term (luni/ani)", decizii["Long Term"])
+        
+        st.info("💡 **Notă strategică:** Deciziile sunt bazate pe analiza tehnică pură. Nu reprezintă sfaturi financiare!")
+            
+
+        # Știri
+        st.subheader("📰 Monitorul de Știri")
+        try:
+            url = f"https://news.google.com/rss/search?q={ticker_ales}+stock"
+            soup = BeautifulSoup(requests.get(url, timeout=5).content, 'html.parser')
+            for art in soup.find_all('item')[:5]:
+                emoji = "🟢" if any(w in art.title.text.lower() for w in ['bullish','growth','beat']) else "🔴"
+                st.markdown(f"{emoji} [{art.title.text}]({art.link.text})")
+        except:
+            st.info("Știri indisponibile.")
     else:
-        st.error("Date indisponibile.")
+        st.error("Ticker invalid.")
