@@ -56,7 +56,7 @@ if st.button("🚀 Rulează Analiza"):
 
         # Verdict și MAMI EDGE
         st.markdown("---")    
-                st.subheader("🛡️ MAMI EDGE: Evaluare Multi-Factorială")
+            st.subheader("🛡️ MAMI EDGE: Evaluare Multi-Factorială")
             
             # Calcul scor dinamic (bazat pe indicatorii pe care îi avem deja)
             # Acesta este un model de scor instituțional simplificat
