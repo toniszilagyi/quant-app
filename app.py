@@ -150,14 +150,15 @@ if st.sidebar.button("🔍 Scanează Oportunități"):
         
         st.write(f"ℹ️ *Dacă prețul scade sub {stop_loss:.2f} $, volatilitatea curentă indică faptul că trendul a fost invalidat.*")
 
-        # Știri
+                # Știri
         st.subheader("📰 Monitorul de Știri")
         try:
             url = f"https://news.google.com/rss/search?q={ticker_ales}+stock"
             soup = BeautifulSoup(requests.get(url, timeout=5).content, 'html.parser')
             for art in soup.find_all('item')[:5]:
-                st.markdown(f"⚪ [{art.title.text}]({art.link.text})")
+                emoji = "🟢" if any(w in art.title.text.lower() for w in ['bullish','growth','beat']) else "🔴"
+                st.markdown(f"{emoji} [{art.title.text}]({art.link.text})")
         except:
             st.info("Știri indisponibile.")
     else:
-        st.error("Date indisponibile pentru acest Ticker.")
+        st.error("Ticker invalid.")
