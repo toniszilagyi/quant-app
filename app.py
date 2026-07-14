@@ -55,8 +55,8 @@ if st.button("🚀 Rulează Analiza"):
         st.plotly_chart(fig, use_container_width=True)
 
         # Verdict și MAMI EDGE
-        st.markdown("---")
-            st.subheader("🛡️ MAMI EDGE: Evaluare Multi-Factorială")
+        st.markdown("---")    
+                st.subheader("🛡️ MAMI EDGE: Evaluare Multi-Factorială")
             
             # Calcul scor dinamic (bazat pe indicatorii pe care îi avem deja)
             # Acesta este un model de scor instituțional simplificat
