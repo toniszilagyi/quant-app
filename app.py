@@ -106,14 +106,4 @@ if st.sidebar.button("🔄 Actualizează Radar"):
         for ticker, change in performeri[:5]:
             st.sidebar.write(f"🟢 **{ticker}**: {change:+.2f}%")
 
-        # Știri
-        st.subheader("📰 Monitorul de Știri")
-        try:
-            url = f"https://news.google.com/rss/search?q={ticker_ales}+stock"
-            soup = BeautifulSoup(requests.get(url, timeout=5).content, 'html.parser')
-            for art in soup.find_all('item')[:5]:
-                st.markdown(f"⚪ [{art.title.text}]({art.link.text})")
-        except:
-            st.info("Știri indisponibile.")
-        else:
-        st.error("Date indisponibile pentru acest Ticker.")
+        
