@@ -82,6 +82,29 @@ if st.button("🚀 Rulează Analiza"):
         col2.metric("Stop Loss Recomandat", f"{stop_loss:.2f} $")
         
         st.write(f"ℹ️ *Dacă prețul scade sub {stop_loss:.2f} $, volatilitatea curentă indică faptul că trendul a fost invalidat.*")
+        # --- RADAR DE TOP GAINERS (Sidebar) ---
+st.sidebar.title("🚀 Top Gainers")
+if st.sidebar.button("🔄 Actualizează Radar"):
+    with st.sidebar.spinner("Scanare în curs..."):
+        # Listă de ticker-e de referință (poți adăuga oricâte)
+        lista_monitorizata = ["NVDA", "AAPL", "TSLA", "AMD", "MSFT", "GOOGL", "AMZN", "META", "NFLX", "AVGO"]
+        performeri = []
+
+        for ticker in lista_monitorizata:
+            try:
+                t = yf.Ticker(ticker)
+                hist = t.history(period="2d")
+                if len(hist) >= 2:
+                    change = ((hist['Close'].iloc[-1] - hist['Close'].iloc[-2]) / hist['Close'].iloc[-2]) * 100
+                    performeri.append((ticker, change))
+            except: continue
+        
+        # Sortăm după performanță (descrescător)
+        performeri.sort(key=lambda x: x[1], reverse=True)
+        
+        # Afișăm Top 5
+        for ticker, change in performeri[:5]:
+            st.sidebar.write(f"🟢 **{ticker}**: {change:+.2f}%")
 
         # Știri
         st.subheader("📰 Monitorul de Știri")
