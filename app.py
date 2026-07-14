@@ -91,6 +91,28 @@ if st.button("🚀 Rulează Analiza"):
                 st.write("• **Relative Strength:** Analizat vs S&P500")
                 st.write("• **Entry Quality:** Evaluat pe baza mediei mobile")
                 st.write("• **Risk/Reward:** Optimizat pentru orizontul selectat")
+                # --- ASISTENT DECIZIE STRATEGIC ---
+        st.markdown("---")
+        st.subheader("🤖 Asistent de Decizie Strategic")
+        
+        # Calculăm SMA 200 pentru Long Term (necesită date pe 1 an+)
+        istoric['SMA_200'] = istoric['Close'].rolling(window=200).mean()
+        pret_curr = ultimul_pret
+        
+        # Logica deciziilor
+        decizii = {
+            "Swing": "🟢 BUY" if (pret_curr > istoric['EMA_8'].iloc[-1] and rsi_acum < 60) else "🔴 WAIT",
+            "Position": "🟢 BUY" if (istoric['EMA_20'].iloc[-1] > istoric['EMA_50'].iloc[-1]) else "🔴 SELL/HOLD",
+            "Long Term": "🟢 BULLISH" if (pret_curr > istoric['SMA_200'].iloc[-1]) else "🔴 BEARISH"
+        }
+        
+        # Afișare sub formă de coloane (Dashboard decizional)
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Swing (1-5 zile)", decizii["Swing"])
+        col2.metric("Position (săptămâni)", decizii["Position"])
+        col3.metric("Long Term (luni/ani)", decizii["Long Term"])
+        
+        st.info("💡 **Notă strategică:** Deciziile sunt bazate pe analiza tehnică pură. Nu reprezintă sfaturi financiare!")
             
 
         # Știri
